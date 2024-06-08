@@ -23,5 +23,17 @@ pip install unstructured
 pip install "unstructured[docx]"
 pip install "unstructured[pdf]"
 pip install fpdf
+pip install PyPDF2
+
+---
+
+pip install openai
+pip install langchain
+pip install pypdf2
+pip install chroma
+pip install tiktoken
+pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+---
 
 Once Installed all dependencies
