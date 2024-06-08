@@ -17,6 +17,7 @@ pip install openai
 pip install python-dotenv
 pip install langchain_community
 pip install langchain-openai
+pip install langchain_pinecone
 pip install docx2txt #to read word documents
 pip install unstructured
 pip install "unstructured[docx]"
