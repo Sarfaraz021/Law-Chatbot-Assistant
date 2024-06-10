@@ -5,29 +5,23 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.prompts.prompt import PromptTemplate
 from langchain.chains import RetrievalQA
 from langchain.memory import ConversationBufferMemory
-# from langchain_community.document_loaders import DirectoryLoader
-from langchain_community.document_loaders import Docx2txtLoader
-from langchain_community.document_loaders import UnstructuredExcelLoader
-from langchain_community.document_loaders.csv_loader import CSVLoader
-from langchain_community.document_loaders import TextLoader
-from langchain_community.document_loaders import PyPDFLoader
-
+from langchain_community.document_loaders import Docx2txtLoader, UnstructuredExcelLoader, CSVLoader, TextLoader, PyPDFLoader
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone
 from prompt import prompt_template_text
+from langchain_google_community import GoogleDriveLoader
 
 
 class RAGAssistant:
     def __init__(self):
         self.load_env_variables()
         self.setup_prompt_template()
-        self.retriever = None  # Define retriever as an instance variable
+        self.retriever = None
         self.relative_path = 'data'
         self.filename = 'dummy.txt'
         self.absolute_path = os.path.join(self.relative_path, self.filename)
-        # default_documents_directory = r"D:\DanyAIApp\code\data\dummy.txt"
         self.initialize_retriever(self.absolute_path)
-        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.9)
+        self.llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.9)
 
     def load_env_variables(self):
         """Loads environment variables from .env file."""
@@ -35,6 +29,7 @@ class RAGAssistant:
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
+        self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
     def setup_prompt_template(self):
         """Sets up the prompt template for chat completions."""
@@ -91,11 +86,10 @@ class RAGAssistant:
 
     def chat(self):
         """Starts a chat session with the AI assistant."""
-
         chain = RetrievalQA.from_chain_type(
             llm=self.llm,
             chain_type='stuff',
-            retriever=self.retriever,  # Use the instance variable here
+            retriever=self.retriever,
             chain_type_kwargs={"verbose": False, "prompt": self.prompt_template,
                                "memory": ConversationBufferMemory(memory_key="history", input_key="question")}
         )
@@ -107,16 +101,49 @@ class RAGAssistant:
                 print("Thanks!! Exiting...")
                 break
             else:
-                # Use 'chain' instead of 'self.chain'
                 assistant_response = chain.invoke(prompt)  # type: ignore
                 print(f"AI Assistant: {assistant_response['result']}")
+                print("*********************************")
+
+    def initialize_gdrive_retriever(self, folder_id):
+        """Initializes the retriever with documents from Google Drive."""
+        loader = GoogleDriveLoader(folder_id=folder_id, recursive=False)
+        documents = loader.load()
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=10000, chunk_overlap=200)
+        docs = text_splitter.split_documents(documents)
+        embeddings = OpenAIEmbeddings()
+
+        Pinecone(api_key=self.pinecone_api_key, environment='gcp-starter')
+        vectbd = PineconeVectorStore.from_documents(
+            docs, embeddings, index_name=self.pinecone_index_name)
+        self.retriever = vectbd.as_retriever()
+
+    def chat_drive(self):
+        """Starts a chat session with the AI assistant for Google Drive documents."""
+        if self.retriever is None:
+            print("Retriever is not initialized.")
+            return
+
+        llm = ChatOpenAI(temperature=0.7, model_name="gpt-4")
+        chain = RetrievalQA.from_chain_type(
+            llm=llm, chain_type="stuff", retriever=self.retriever)
+
+        while True:
+            query = input("Enter Prompt (or 'exit' to quit): ").strip()
+            if query.lower() == "exit":
+                print("Thanks!! Exiting...")
+                break
+            else:
+                answer = chain.invoke(query)
+                print(f"AI Assistant: {answer['result']}")
                 print("*********************************")
 
     def start(self):
         """Main function to start the assistant."""
         while True:
             choice = input(
-                "\nEnter 1 for RAG Assistant chat or 2 to Fine-tune RAG: ").strip()
+                "\nEnter 1 for RAG Assistant chat, 2 to Fine-tune RAG, or 3 to Chat with Google Drive Docs: ").strip()
             if choice == "1":
                 self.chat()
             elif choice == "2":
@@ -125,8 +152,15 @@ class RAGAssistant:
                 self.finetune(path)
                 print(
                     "\nFine-tuning done successfully. You can now chat with the updated RAG Assistant.\n")
+            elif choice == "3":
+                folder_id = input(
+                    "Enter Google Drive folder ID to fine-tune the RAG: ").strip()
+                self.initialize_gdrive_retriever(folder_id)
+                print(
+                    "\nFine-tuning with Google Drive folder done successfully. You can now chat with your updated context from Google Drive.\n")
+                self.chat_drive()
             else:
-                print("Invalid choice. Please enter 1 or 2.")
+                print("Invalid choice. Please enter 1, 2, or 3.")
 
 
 if __name__ == "__main__":

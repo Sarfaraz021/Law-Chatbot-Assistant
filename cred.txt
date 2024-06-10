@@ -1,0 +1,3 @@
+
+these are the Gerry's Credentials and he will use them in his fyp of Uni.
+Gerry_CREDENTIALS="D:\Gerry-Law-Chatbot-Assistant\.credentials\credentials.json"
