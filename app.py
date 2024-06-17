@@ -12,7 +12,6 @@ from pinecone import Pinecone
 from prompt import prompt_template_text, toc_prompt_template_text
 from langchain_google_community import GoogleDriveLoader
 from fpdf import FPDF
-import io
 
 
 class RAGAssistant:
