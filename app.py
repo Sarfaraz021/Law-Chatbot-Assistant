@@ -31,7 +31,11 @@ class RAGAssistant:
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
-        self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        self.cred_relative_path = '.credentials'
+        self.cred_filename = 'credentials.json'
+        self.credentials_path = os.path.join(
+            self.cred_relative_path, self.cred_filename)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.credentials_path
 
     def setup_prompt_template(self):
         """Sets up the prompt template for chat completions."""
