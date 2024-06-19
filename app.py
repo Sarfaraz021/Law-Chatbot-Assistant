@@ -31,11 +31,7 @@ class RAGAssistant:
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
-        self.cred_relative_path = '.credentials'
-        self.cred_filename = 'credentials.json'
-        self.credentials_path = os.path.join(
-            self.cred_relative_path, self.cred_filename)
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.credentials_path
+        self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
     def setup_prompt_template(self):
         """Sets up the prompt template for chat completions."""
@@ -59,7 +55,7 @@ class RAGAssistant:
         docs = text_splitter.split_documents(documents)
         embeddings = OpenAIEmbeddings()
 
-        Pinecone(api_key=self.pinecone_api_key, environment='gcp-starter')
+        Pinecone(api_key=self.pinecone_api_key, environment='us-east-1-aws')
         vectbd = PineconeVectorStore.from_documents(
             docs, embeddings, index_name=self.pinecone_index_name)
         self.retriever = vectbd.as_retriever()
@@ -90,7 +86,7 @@ class RAGAssistant:
             chunk_size=10000, chunk_overlap=200)
         docs = text_splitter.split_documents(documents)
         embeddings = OpenAIEmbeddings()
-        Pinecone(api_key=self.pinecone_api_key, environment='gcp-starter')
+        Pinecone(api_key=self.pinecone_api_key, environment='us-east-1-aws')
         vectbd = PineconeVectorStore.from_documents(
             docs, embeddings, index_name=self.pinecone_index_name)
         self.retriever = vectbd.as_retriever()
@@ -118,7 +114,7 @@ class RAGAssistant:
         docs = text_splitter.split_documents(documents)
         embeddings = OpenAIEmbeddings()
 
-        Pinecone(api_key=self.pinecone_api_key, environment='gcp-starter')
+        Pinecone(api_key=self.pinecone_api_key, environment='us-east-1-aws')
         vectbd = PineconeVectorStore.from_documents(
             docs, embeddings, index_name=self.pinecone_index_name)
         self.retriever = vectbd.as_retriever()
