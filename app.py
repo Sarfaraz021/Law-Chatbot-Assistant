@@ -25,10 +25,16 @@ class RAGAssistant:
         self.initialize_retriever(self.absolute_path)
         self.llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
 
-    cred_relative_path = 'home\appuser\.credentials'
-    cred_filename = 'credentials.json'
-    credentials_path = os.path.join(cred_relative_path, cred_filename)
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
+        self.cred_relative_path = '.credentials'
+        self.cred_filename = 'credentials.json'
+        self.credentials_path = os.path.join(
+            self.cred_relative_path, self.cred_filename)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.credentials_path
+
+        # Ensure the credentials file exists
+        if not os.path.exists(self.credentials_path):
+            raise FileNotFoundError(
+                f"Credentials file not found at {self.credentials_path}")
 
     def load_env_variables(self):
         """Loads environment variables from .env file."""
@@ -36,7 +42,6 @@ class RAGAssistant:
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
-        # self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
     def setup_prompt_template(self):
         """Sets up the prompt template for chat completions."""
