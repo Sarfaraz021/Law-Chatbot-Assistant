@@ -29,6 +29,7 @@ class RAGAssistant:
     # cred_filename = 'credentials.json'
     # credentials_path = os.path.join(cred_relative_path, cred_filename)
     # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
+    # os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 
     def load_env_variables(self):
         """Loads environment variables from .env file."""
@@ -36,6 +37,8 @@ class RAGAssistant:
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv(
+            "GOOGLE_APPLICATION_CREDENTIALS")
         # self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
     def setup_prompt_template(self):
