@@ -34,3 +34,8 @@ pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-
 ---
 
 Once Installed all dependencies
+
+Set Up Google Env Variable:
+
+$env:GOOGLE_APPLICATION_CREDENTIALS="D:\Gerry-Law-Chatbot-Assistant\.credentials\credentials.json"
+to varify
