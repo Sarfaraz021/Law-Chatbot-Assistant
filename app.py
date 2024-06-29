@@ -28,7 +28,7 @@ class RAGAssistant:
     # cred_relative_path = '.credentials'
     # cred_filename = 'credentials.json'
     # credentials_path = os.path.join(cred_relative_path, cred_filename)
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "GOOGLE_APPLICATION_CREDENTIALS"
+    # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
 
     def load_env_variables(self):
         """Loads environment variables from .env file."""
