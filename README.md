@@ -37,5 +37,6 @@ Once Installed all dependencies
 
 Set Up Google Env Variable:
 
-$env:GOOGLE_APPLICATION_CREDENTIALS="D:\Gerry-Law-Chatbot-Assistant\.credentials\credentials.json"
+$env:GOOGLE_APPLICATION_CREDENTIALS=".credentials\credentials.json"
 to varify
+$env:GOOGLE_APPLICATION_CREDENTIALS
