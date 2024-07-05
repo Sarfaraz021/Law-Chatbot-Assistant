@@ -37,8 +37,8 @@ class RAGAssistant:
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv(
-            "GOOGLE_APPLICATION_CREDENTIALS")
+        # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv(
+        #     "GOOGLE_APPLICATION_CREDENTIALS")
         # self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
     def setup_prompt_template(self):
@@ -59,7 +59,7 @@ class RAGAssistant:
         loader = TextLoader(directory_path)
         documents = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=10000, chunk_overlap=200)
+            chunk_size=1000, chunk_overlap=200)
         docs = text_splitter.split_documents(documents)
         embeddings = OpenAIEmbeddings()
 
@@ -91,7 +91,7 @@ class RAGAssistant:
     def process_documents(self, documents):
         """Process and index the documents."""
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=10000, chunk_overlap=200)
+            chunk_size=1000, chunk_overlap=200)
         docs = text_splitter.split_documents(documents)
         embeddings = OpenAIEmbeddings()
         Pinecone(api_key=self.pinecone_api_key, environment='us-east-1-aws')
@@ -113,12 +113,24 @@ class RAGAssistant:
         response_text = assistant_response['result']
         return response_text
 
+    # def initialize_gdrive_retriever(self, folder_id):
+    #     """Initializes the retriever with documents from Google Drive."""
+    #     loader = GoogleDriveLoader(folder_id=folder_id,
+    #                                token_path=r"D:\Gerry-Law-Chatbot-Assistant\.credentials\google_token.json",
+    #                                recursive=False)
+    #     documents = loader.load()
     def initialize_gdrive_retriever(self, folder_id):
         """Initializes the retriever with documents from Google Drive."""
-        loader = GoogleDriveLoader(folder_id=folder_id, recursive=False)
+        loader = GoogleDriveLoader(
+            folder_id=folder_id,
+            token_path=r".credentials\google_token.json",
+            credentials_path=r".credentials\credentials.json",
+            recursive=False
+        )
         documents = loader.load()
+
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=10000, chunk_overlap=200)
+            chunk_size=1000, chunk_overlap=200)
         docs = text_splitter.split_documents(documents)
         embeddings = OpenAIEmbeddings()
 
