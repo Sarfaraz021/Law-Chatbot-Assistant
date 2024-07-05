@@ -25,6 +25,16 @@ class RAGAssistant:
         self.initialize_retriever(self.absolute_path)
         self.llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
 
+        self.cred_relative_path = '.credentials'
+        self.cred_filename = 'credentials.json'
+        self.cred_absolute_path = os.path.join(
+            self.cred_relative_path, self.cred_filename)
+
+        self.token_relative_path = '.credentials'
+        self.token_filename = 'google_token.json'
+        self.token_absolute_path = os.path.join(
+            self.token_relative_path, self.token_filename)
+
     # cred_relative_path = '.credentials'
     # cred_filename = 'credentials.json'
     # credentials_path = os.path.join(cred_relative_path, cred_filename)
@@ -123,8 +133,8 @@ class RAGAssistant:
         """Initializes the retriever with documents from Google Drive."""
         loader = GoogleDriveLoader(
             folder_id=folder_id,
-            token_path=r".credentials\google_token.json",
-            credentials_path=r".credentials\credentials.json",
+            token_path=self.token_absolute_path,
+            credentials_path=self.cred_absolute_path,
             recursive=False
         )
         documents = loader.load()
