@@ -6,12 +6,15 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.prompts.prompt import PromptTemplate
 from langchain.chains import RetrievalQA, LLMChain
 from langchain.memory import ConversationBufferMemory
-from langchain_community.document_loaders import Docx2txtLoader, UnstructuredExcelLoader, CSVLoader, TextLoader, PyPDFLoader
+from langchain_community.document_loaders import Docx2txtLoader, UnstructuredExcelLoader, CSVLoader, TextLoader, PyPDFLoader, WebBaseLoader
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone
 from prompt import prompt_template_text, toc_prompt_template_text
-from langchain_google_community import GoogleDriveLoader
 from fpdf import FPDF
+from langchain_community.vectorstores import Chroma
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate
 
 
 class RAGAssistant:
@@ -25,31 +28,12 @@ class RAGAssistant:
         self.initialize_retriever(self.absolute_path)
         self.llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
 
-        self.cred_relative_path = '.credentials'
-        self.cred_filename = 'credentials.json'
-        self.cred_absolute_path = os.path.join(
-            self.cred_relative_path, self.cred_filename)
-
-        self.token_relative_path = '.credentials'
-        self.token_filename = 'google_token.json'
-        self.token_absolute_path = os.path.join(
-            self.token_relative_path, self.token_filename)
-
-    # cred_relative_path = '.credentials'
-    # cred_filename = 'credentials.json'
-    # credentials_path = os.path.join(cred_relative_path, cred_filename)
-    # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
-    # os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-
     def load_env_variables(self):
         """Loads environment variables from .env file."""
         load_dotenv('var.env')
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
-        # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv(
-        #     "GOOGLE_APPLICATION_CREDENTIALS")
-        # self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
     def setup_prompt_template(self):
         """Sets up the prompt template for chat completions."""
@@ -119,40 +103,9 @@ class RAGAssistant:
                                "memory": ConversationBufferMemory(memory_key="history", input_key="question")}
         )
 
-        assistant_response = chain.invoke(user_input)  # type: ignore
+        assistant_response = chain.invoke(user_input)
         response_text = assistant_response['result']
         return response_text
-
-    # def initialize_gdrive_retriever(self, folder_id):
-    #     """Initializes the retriever with documents from Google Drive."""
-    #     loader = GoogleDriveLoader(folder_id=folder_id,
-    #                                token_path=r"D:\Gerry-Law-Chatbot-Assistant\.credentials\google_token.json",
-    #                                recursive=False)
-    #     documents = loader.load()
-    def initialize_gdrive_retriever(self, folder_id):
-        """Initializes the retriever with documents from Google Drive."""
-        loader = GoogleDriveLoader(
-            folder_id=folder_id,
-            token_path=self.token_absolute_path,
-            credentials_path=self.cred_absolute_path,
-            recursive=False
-        )
-        documents = loader.load()
-
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000, chunk_overlap=200)
-        docs = text_splitter.split_documents(documents)
-        embeddings = OpenAIEmbeddings()
-
-        Pinecone(api_key=self.pinecone_api_key, environment='us-east-1-aws')
-        vectbd = PineconeVectorStore.from_documents(
-            docs, embeddings, index_name=self.pinecone_index_name)
-        self.retriever = vectbd.as_retriever()
-
-    def finetune_gdrive(self, folder_id):
-        """Fine-tunes the assistant with documents from a Google Drive folder."""
-        self.initialize_gdrive_retriever(folder_id)
-        return "Fine-tuning with Google Drive folder done successfully. You can now chat with your updated context from Google Drive."
 
     def generate_toc(self, user_input):
         """Generates a table of contents based on user input."""
@@ -210,13 +163,13 @@ def main():
     # Initialize session state
     if "messages" not in st.session_state:
         st.session_state.messages = []
-    if "gdrive_folder_id" not in st.session_state:
-        st.session_state.gdrive_folder_id = ""
     if "toc_content" not in st.session_state:
         st.session_state.toc_content = ""
+    if 'vectorstore' not in st.session_state:
+        st.session_state.vectorstore = None
 
     option = st.sidebar.selectbox(
-        "Choose an option", ("Chat", "Fine-tuning", "Fine-tune with Google Drive", "Generate Table of Contents"))
+        "Choose an option", ("Chat", "Fine-tuning", "Generate Table of Contents", "Web Content Q&A"))
 
     if option == "Chat":
         st.header("Chat with your Docs")
@@ -254,16 +207,6 @@ def main():
             st.success(
                 "Fine-tuning done successfully. You can now chat with the updated RAG Assistant.")
 
-    elif option == "Fine-tune with Google Drive":
-        st.header("Fine-tune with Google Drive")
-        folder_id = st.text_input("Enter Google Drive folder ID")
-
-        if st.button("Fine-tune"):
-            if folder_id:
-                with st.spinner("Fine-tuning with Google Drive in progress..."):
-                    message = assistant.finetune_gdrive(folder_id)
-                st.success(message)
-
     elif option == "Generate Table of Contents":
         st.header("Generate Table of Contents")
 
@@ -289,6 +232,58 @@ def main():
                     file_name="table_of_contents.pdf",
                     mime="application/pdf"
                 )
+
+    elif option == "Web Content Q&A":
+        st.header("Web Content Q&A")
+
+        # Input for web link
+        url = st.text_input("Enter a web link to index:")
+
+        if st.button("Index Content"):
+            with st.spinner("Indexing content..."):
+                # Load and process the web content
+                loader = WebBaseLoader(url)
+                docs = loader.load()
+
+                # Split the documents
+                text_splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=1000, chunk_overlap=200)
+                splits = text_splitter.split_documents(docs)
+
+                # Create and store the vectorstore
+                embeddings = OpenAIEmbeddings()
+                st.session_state.vectorstore = Chroma.from_documents(
+                    documents=splits, embedding=embeddings)
+
+            st.success("Content indexed successfully!")
+
+        # Chat interface
+        if st.session_state.vectorstore is not None:
+            query = st.text_input("Ask a question about the indexed content:")
+
+            if query:
+                # Create the chain
+                retriever = st.session_state.vectorstore.as_retriever()
+
+                prompt = ChatPromptTemplate.from_messages([
+                    ("system", "You are an assistant for question-answering tasks. "
+                     "Use the following pieces of retrieved context to answer the question. "
+                     "If you don't know the answer, just say that you don't know. "
+                     "Use three sentences maximum and keep the answer detailed.\n\n{context}"),
+                    ("human", "{input}")
+                ])
+
+                combine_docs_chain = create_stuff_documents_chain(
+                    assistant.llm, prompt)
+                retrieval_chain = create_retrieval_chain(
+                    retriever, combine_docs_chain)
+
+                # Run the chain
+                response = retrieval_chain.invoke({"input": query})
+
+                st.write("Answer:", response['answer'])
+        else:
+            st.info("Please index a web page first.")
 
 
 if __name__ == "__main__":
