@@ -11,7 +11,7 @@ from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone
 from prompt import prompt_template_text, toc_prompt_template_text
 from fpdf import FPDF
-from langchain_community.vectorstores import Chroma
+# from langchain_community.vectorstores import Chroma
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
@@ -248,12 +248,16 @@ def main():
                 # Split the documents
                 text_splitter = RecursiveCharacterTextSplitter(
                     chunk_size=1000, chunk_overlap=200)
-                splits = text_splitter.split_documents(docs)
+                docs = text_splitter.split_documents(docs)
 
                 # Create and store the vectorstore
                 embeddings = OpenAIEmbeddings()
-                st.session_state.vectorstore = Chroma.from_documents(
-                    documents=splits, embedding=embeddings)
+                Pinecone(api_key="bf5d3307-78d9-4f61-8ced-b6d53a43e6c6",
+                         environment='us-east-1-aws')
+                st.session_state.vectorstore = PineconeVectorStore.from_documents(
+                    docs, embeddings, index_name="gerrylawchatbot")
+                # st.session_state.vectorstore = Chroma.from_documents(
+                #     documents=docs, embedding=embeddings)
 
             st.success("Content indexed successfully!")
 
