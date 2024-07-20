@@ -274,7 +274,7 @@ def main():
                     ("system", "You are an assistant for question-answering tasks. "
                      "Use the following pieces of retrieved context to answer the question. "
                      "If you don't know the answer, just say that you don't know. "
-                     "Use three sentences maximum and keep the answer detailed.\n\n{context}"),
+                     "keep the answer detailed.\n\n{context}"),
                     ("human", "{input}")
                 ])
 
