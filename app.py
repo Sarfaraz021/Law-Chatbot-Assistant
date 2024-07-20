@@ -8,6 +8,7 @@ from langchain.chains import RetrievalQA, LLMChain
 from langchain.memory import ConversationBufferMemory
 from langchain_community.document_loaders import Docx2txtLoader, UnstructuredExcelLoader, CSVLoader, TextLoader, PyPDFLoader, WebBaseLoader
 from langchain_pinecone import PineconeVectorStore
+from langchain_community.vectorstores import FAISS
 from pinecone import Pinecone
 from prompt import prompt_template_text, toc_prompt_template_text
 from fpdf import FPDF
@@ -252,12 +253,12 @@ def main():
 
                 # Create and store the vectorstore
                 embeddings = OpenAIEmbeddings()
-                Pinecone(api_key="bf5d3307-78d9-4f61-8ced-b6d53a43e6c6",
-                         environment='us-east-1-aws')
-                st.session_state.vectorstore = PineconeVectorStore.from_documents(
-                    docs, embeddings, index_name="gerrylawchatbot")
-                # st.session_state.vectorstore = Chroma.from_documents(
-                #     documents=docs, embedding=embeddings)
+                # Pinecone(api_key="bf5d3307-78d9-4f61-8ced-b6d53a43e6c6",
+                #          environment='us-east-1-aws')
+                # st.session_state.vectorstore = PineconeVectorStore.from_documents(
+                #     docs, embeddings, index_name="gerrylawchatbot")
+                st.session_state.vectorstore = FAISS.from_documents(
+                    documents=docs, embedding=embeddings)
 
             st.success("Content indexed successfully!")
 
