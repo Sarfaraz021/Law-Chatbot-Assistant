@@ -1,4 +1,4 @@
-# Gerry-Law-Chatbot-Assistant
+#Law-Chatbot-Assistant
 
 FirST Make a Virtual Enviroment in vs code with python-3.11.5
 
